@@ -1,18 +1,21 @@
-# Virtual environment
+# Python
 venv/
-
-# Python cache
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
 
-# Environment variables - NEVER push this
+# Environment
 .env
+.env.dev
+.env.production
 
-# VS Code
+# Test files
+.pytest_cache/
+htmlcov/
+coverage.xml
+
+# IDE
 .vscode/
+.idea/
 
-# OS files
-.DS_Store
-Thumbs.db
+# Logs
+*.log

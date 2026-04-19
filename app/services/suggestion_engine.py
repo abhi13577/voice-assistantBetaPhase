@@ -1,5 +1,10 @@
 from app.schemas.response import SuggestedAction
+"""
+Future feature: Suggestion engine / context tracking.
 
+Currently not integrated in the demo vertical.
+Will be used when conversation memory is implemented.
+"""
 
 class SuggestionEngine:
 

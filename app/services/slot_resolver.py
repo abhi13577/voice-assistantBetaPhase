@@ -19,5 +19,10 @@ class SlotResolver:
         # Detect failed count
         if "failed" in transcript_lower:
             slots["detail"] = "failed_count"
+        if "nightly" in transcript.lower():
+            slots["run_name"] = "nightly"
+
+        if "regression" in transcript.lower():
+            slots["run_name"] = "regression"
 
         return slots

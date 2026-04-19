@@ -1,8 +1,12 @@
 from app.services.product_api_client import product_api_client
 from app.services.slot_resolver import SlotResolver
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ResponseBuilder:
+    """Build responses based on classified intent and user context."""
 
     async def build(
         self,
@@ -11,8 +15,36 @@ class ResponseBuilder:
         project_id: int,
         transcript: str,
         llm_slots: dict = None
-    ):
+    ) -> tuple:
+        """Build response with full validation.
+        
+        Returns:
+            Tuple of (reply_text, context_used, suggestions)
+        """
+        
+        # ✅ VALIDATION: Ensure user exists
+        user = product_api_client.get_user(user_id)
+        if not user:
+            logger.warning(f"ResponseBuilder: User not found user_id={user_id}")
+            return (
+                "I couldn't find your account. Please contact support.",
+                [],
+                []
+            )
+        
+        # ✅ VALIDATION: Ensure project exists for user
+        if project_id:
+            projects = product_api_client.get_projects(user_id)
+            project_exists = any(p["id"] == project_id for p in projects)
+            if not project_exists and project_id != 0:
+                logger.warning(f"ResponseBuilder: Project not found project_id={project_id} for user_id={user_id}")
+                return (
+                    "You don't have access to that project.",
+                    [],
+                    []
+                )
 
+        # Get projects (already have user validation above)
         projects = product_api_client.get_projects(user_id)
         templates = product_api_client.get_tts_templates()
 
@@ -46,9 +78,19 @@ class ResponseBuilder:
                 reply = templates["run_not_found"]
                 return reply, ["run_status"], []
 
-            project_name = next(
-                p["name"] for p in projects if p["id"] == run["project_id"]
+            # ✅ FIX: Use safe pattern to avoid StopIteration crash
+            project_match = next(
+                (p for p in projects if p["id"] == run["project_id"]),
+                None
             )
+            
+            if not project_match:
+                # Project not found - shouldn't happen but handle gracefully
+                logger.warning(f"Project not found: project_id={run['project_id']}")
+                reply = "Could not find project information for your run."
+                return reply, ["run_status"], []
+            
+            project_name = project_match["name"]
 
             # All tests passed
             if run["failed_tests"] == 0:
